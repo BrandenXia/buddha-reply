@@ -1,0 +1,6 @@
+[submodule "thirdparty/SQLiteCpp"]
+	path = thirdparty/SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp.git
+[submodule "thirdparty/cppcoro"]
+	path = thirdparty/cppcoro
+	url = https://github.com/lewissbaker/cppcoro.git
