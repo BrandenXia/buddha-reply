@@ -69,9 +69,8 @@ time_point parse_time(std::string_view time_str) {
 cppcoro::generator<std::pair<time_point, std::string>> get_messages() {
   auto db = SQLite::Database{db_path};
 
-  auto query =
-      SQLite::Statement{db, "SELECT createdAt,content FROM "
-                            "messages WHERE length(content) <= ? LIMIT 50"};
+  auto query = SQLite::Statement{db, "SELECT createdAt,content FROM "
+                                     "messages WHERE length(content) <= ?"};
   query.bind(1, MAX_CHAR_LEN);
 
   while (query.executeStep()) {
