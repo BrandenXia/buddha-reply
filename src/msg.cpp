@@ -49,7 +49,7 @@ bool is_spam(std::string_view content) {
   return false;
 }
 
-time_point parse_time(std::string_view time_str) {
+auto parse_time(std::string_view time_str) {
   auto t = std::tm{};
   auto ss = std::istringstream{std::string{time_str}};
   ss >> std::get_time(&t, "%Y-%m-%d %H:%M:%S");
@@ -66,7 +66,8 @@ time_point parse_time(std::string_view time_str) {
   return std::chrono::system_clock::from_time_t(timet);
 }
 
-cppcoro::generator<std::pair<time_point, std::string>> get_messages() {
+auto get_messages()
+    -> cppcoro::generator<std::pair<time_point, std::u8string>> {
   auto db = SQLite::Database{db_path};
 
   auto query = SQLite::Statement{db, "SELECT createdAt,content FROM "
@@ -80,7 +81,11 @@ cppcoro::generator<std::pair<time_point, std::string>> get_messages() {
     if (is_spam(content))
       continue;
 
-    co_yield {parse_time(createdAt), std::string{content}};
+    auto sv = std::string_view{content};
+
+    co_yield {
+        parse_time(createdAt),
+        std::u8string{reinterpret_cast<const char8_t *>(sv.data()), sv.size()}};
   }
 }
 

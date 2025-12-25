@@ -1,15 +1,17 @@
 #include <fstream>
 #include <print>
+#include <ranges>
 #include <string_view>
 
+#include "bpe.h"
 #include "msg.h"
 
-void export_clean(std::string_view filename) {
+auto export_clean(std::string_view filename) {
   auto f = std::ofstream(filename.data());
 
   auto cnt = 0;
   for (const auto &[time, content] : buddha::get_messages()) {
-    f << content << "\n\n";
+    f << reinterpret_cast<const char *>(content.c_str()) << "\n\n";
     cnt++;
   }
   f.close();
@@ -17,7 +19,18 @@ void export_clean(std::string_view filename) {
   std::println("Finished exporting {} messages to {}", cnt, filename);
 }
 
-int main(int argc, char *argv[]) {
+auto bpe() {
+  // clang-format off
+  const auto msgs = buddha::get_messages()
+    | std::views::transform([](const auto &pair) { return pair.second; })
+    | std::views::join
+    | std::ranges::to<std::u8string>();
+  // clang-format on
+  auto t = buddha::bpe::build(msgs);
+  buddha::bpe::print_table(t);
+}
+
+auto main(int argc, char *argv[]) -> int {
   if (argc != 2) {
     std::print("Usage: {} <mode>\n", argv[0]);
     return 1;
@@ -26,6 +39,8 @@ int main(int argc, char *argv[]) {
   auto mode = std::string_view{argv[1]};
   if (mode == "export")
     export_clean("data/msg.txt");
+  else if (mode == "bpe")
+    bpe();
   else
     std::println("Unknown mode: {}", mode);
 }
