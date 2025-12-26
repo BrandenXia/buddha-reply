@@ -7,11 +7,10 @@
 
 namespace buddha {
 
-inline constexpr auto db_path = "data/msg.sqlite";
-
 using time_point = std::chrono::system_clock::time_point;
 
-auto get_messages() -> cppcoro::generator<std::pair<time_point, std::u8string>>;
+auto get_messages(std::string_view db_path)
+    -> cppcoro::generator<std::pair<time_point, std::u8string>>;
 
 } // namespace buddha
 

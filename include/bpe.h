@@ -14,7 +14,7 @@ auto build(std::u8string_view raw) -> Table;
 
 auto print_table(const Table &table) -> void;
 
-auto export_table(const Table &table, std::string_view filename) -> void;
+auto export_table(std::string_view filename, const Table &table) -> void;
 
 auto import_table(std::string_view filename) -> Table;
 

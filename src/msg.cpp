@@ -66,7 +66,7 @@ auto parse_time(std::string_view time_str) {
   return std::chrono::system_clock::from_time_t(timet);
 }
 
-auto get_messages()
+auto get_messages(std::string_view db_path)
     -> cppcoro::generator<std::pair<time_point, std::u8string>> {
   auto db = SQLite::Database{db_path};
 

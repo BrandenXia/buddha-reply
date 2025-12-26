@@ -19,21 +19,27 @@ template <typename T1, typename T2> struct pair_hash {
 
 using Freqs = std::unordered_map<Pair, std::size_t, pair_hash<Token, Token>>;
 
-auto fmt_c(Token t) {
+inline auto fmt_c(Token t) {
   if (t >= 32 && t <= 126)
     return std::format("'{}'", static_cast<char>(t));
   else
     return std::format("\\{:02x}", t);
 }
 
-auto print_freqs(const Freqs &freqs) {
+inline auto print_freqs(const Freqs &freqs) {
   for (const auto &[p, count] : freqs)
     std::println("({}, {}) : {}", fmt_c(p.first), fmt_c(p.second), count);
 }
 
-auto find_max_freq(const Freqs &freqs) -> std::pair<Pair, std::size_t> {
+inline auto find_max_freq(const Freqs &freqs) -> std::pair<Pair, std::size_t> {
   return *std::ranges::max_element(
       freqs, [](const auto &a, const auto &b) { return a.second < b.second; });
+}
+
+inline auto init_table(Table &t) {
+  t.reserve(256);
+  for (auto i : std::views::iota(0, 256))
+    t.emplace_back(Pair{static_cast<Token>(i), 0});
 }
 
 auto build(std::u8string_view raw) -> Table {
@@ -41,9 +47,7 @@ auto build(std::u8string_view raw) -> Table {
   auto freqs = Freqs{};
   auto data = std::vector<Token>{};
 
-  t.reserve(256);
-  for (auto i : std::views::iota(0, 256))
-    t.emplace_back(Pair{static_cast<Token>(i), 0});
+  init_table(t);
 
   auto len = raw.size();
   data.reserve(len);
@@ -107,8 +111,40 @@ auto print_table(const Table &table) -> void {
   }
 }
 
-auto export_table(const Table &table, std::string_view filename) -> void {
+auto export_table(std::string_view filename, const Table &table) -> void {
   auto f = std::ofstream{filename.data(), std::ios::binary};
+  // header
+  f.write("BPE1", 4);
+  // body
+  for (auto i = 256; i < table.size(); ++i) {
+    const auto &[first, second] = table[i];
+    f.write(reinterpret_cast<const char *>(&first), sizeof(Token));
+    f.write(reinterpret_cast<const char *>(&second), sizeof(Token));
+  }
+  f.close();
+}
+
+auto import_table(std::string_view filename) -> Table {
+  auto f = std::ifstream{filename.data(), std::ios::binary};
+  // check header
+  char header[4];
+  f.read(header, 4);
+  if (std::string_view{header, 3} != "BPE")
+    throw std::runtime_error("Invalid BPE table file");
+
+  auto t = Table{};
+  init_table(t);
+  switch (header[3]) {
+  case '1':
+    Token first, second;
+    while (f.read(reinterpret_cast<char *>(&first), sizeof(Token))) {
+      f.read(reinterpret_cast<char *>(&second), sizeof(Token));
+      t.emplace_back(Pair{first, second});
+    }
+    return t;
+  default:
+    throw std::runtime_error("Unsupported BPE table version");
+  }
 }
 
 } // namespace buddha::bpe
