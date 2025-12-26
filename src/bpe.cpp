@@ -37,7 +37,6 @@ inline auto find_max_freq(const Freqs &freqs) -> std::pair<Pair, std::size_t> {
 }
 
 inline auto init_table(Table &t) {
-  t.reserve(256);
   for (auto i : std::views::iota(0, 256))
     t.emplace_back(Pair{static_cast<Token>(i), 0});
 }
@@ -47,6 +46,7 @@ auto build(std::u8string_view raw) -> Table {
   auto freqs = Freqs{};
   auto data = std::vector<Token>{};
 
+  t.reserve(256);
   init_table(t);
 
   auto len = raw.size();
@@ -111,8 +111,8 @@ auto print_table(const Table &table) -> void {
   }
 }
 
-auto export_table(std::string_view filename, const Table &table) -> void {
-  auto f = std::ofstream{filename.data(), std::ios::binary};
+auto export_table(std::filesystem::path path, const Table &table) -> void {
+  auto f = std::ofstream{path, std::ios::binary};
   // header
   f.write("BPE1", 4);
   // body
@@ -124,8 +124,8 @@ auto export_table(std::string_view filename, const Table &table) -> void {
   f.close();
 }
 
-auto import_table(std::string_view filename) -> Table {
-  auto f = std::ifstream{filename.data(), std::ios::binary};
+auto import_table(std::filesystem::path path) -> Table {
+  auto f = std::ifstream{path, std::ios::binary};
   // check header
   char header[4];
   f.read(header, 4);
@@ -133,7 +133,11 @@ auto import_table(std::string_view filename) -> Table {
     throw std::runtime_error("Invalid BPE table file");
 
   auto t = Table{};
+  // reserve space
+  auto fsize = std::filesystem::file_size(path);
+  t.reserve(256 + (fsize - 4) / (2 * sizeof(Token)));
   init_table(t);
+
   switch (header[3]) {
   case '1':
     Token first, second;
