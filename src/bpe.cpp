@@ -37,8 +37,9 @@ inline auto find_max_freq(const Freqs &freqs) -> std::pair<Pair, std::size_t> {
 }
 
 inline auto init_table(Table &t) {
+  t.reserve(256);
   for (auto i : std::views::iota(0, 256))
-    t.emplace_back(Pair{static_cast<Token>(i), 0});
+    t.emplace_back(static_cast<Token>(i), 0);
 }
 
 auto build(std::u8string_view raw) -> Table {
@@ -46,7 +47,6 @@ auto build(std::u8string_view raw) -> Table {
   auto freqs = Freqs{};
   auto data = std::vector<Token>{};
 
-  t.reserve(256);
   init_table(t);
 
   auto len = raw.size();
@@ -143,7 +143,7 @@ auto import_table(std::filesystem::path path) -> Table {
     Token first, second;
     while (f.read(reinterpret_cast<char *>(&first), sizeof(Token))) {
       f.read(reinterpret_cast<char *>(&second), sizeof(Token));
-      t.emplace_back(Pair{first, second});
+      t.emplace_back(first, second);
     }
     return t;
   default:
