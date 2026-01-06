@@ -42,9 +42,9 @@ auto export_jsonl(std::filesystem::path filename) {
 
   for (const auto &[_, content] : buddha::get_messages(DB_PATH)) {
     if (user) {
-      writer.StartObject();   // {
-      writer.Key("messages"); // "messages":
-      writer.StartArray();    // [
+      writer.StartObject();
+      writer.Key("messages");
+      writer.StartArray();
     }
 
     writer.StartObject();
