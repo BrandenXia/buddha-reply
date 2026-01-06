@@ -36,14 +36,17 @@ auto export_jsonl(std::filesystem::path filename) {
 
   auto buffer = std::vector<char>(65536);
   auto os = rapidjson::FileWriteStream(fp, buffer.data(), buffer.size());
-
   auto writer = rapidjson::Writer<rapidjson::FileWriteStream>(os);
-  writer.StartObject();
-  writer.Key("messages");
-  writer.StartArray();
 
   auto user = true;
+
   for (const auto &[_, content] : buddha::get_messages(DB_PATH)) {
+    if (user) {
+      writer.StartObject();   // {
+      writer.Key("messages"); // "messages":
+      writer.StartArray();    // [
+    }
+
     writer.StartObject();
     writer.Key("role");
     if (user)
@@ -55,13 +58,20 @@ auto export_jsonl(std::filesystem::path filename) {
                   static_cast<rapidjson::SizeType>(content.size()));
     writer.EndObject();
 
+    if (!user) {
+      writer.EndArray();
+      writer.EndObject();
+      os.Put('\n');
+    }
     user = !user;
   }
 
-  writer.EndArray();
-  writer.EndObject();
+  if (!user) {
+    writer.EndArray();
+    writer.EndObject();
+    os.Put('\n');
+  }
 
-  os.Put('\n');
   os.Flush();
   std::fclose(fp);
 }
