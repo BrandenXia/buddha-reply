@@ -20,3 +20,5 @@ target_link_libraries(buddha-reply
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/cppcoro/include)
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/rapidjson/include)
