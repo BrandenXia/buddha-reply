@@ -8,15 +8,16 @@
 #include <print>
 #include <ranges>
 #include <string_view>
-#include <unordered_set>
+#include <unordered_map>
 
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
 #include "re2/re2.h"
+#include "re2/stringpiece.h"
 
 #include "bpe.h"
 #include "msg.h"
-#include "re2/stringpiece.h"
+#include "utils.h"
 
 constexpr auto db_path = "data/msg.sqlite";
 
@@ -33,6 +34,11 @@ auto text(std::filesystem::path filename) -> void {
   f.close();
 
   std::println("Finished exporting {} messages to {}", cnt, filename.c_str());
+}
+
+re2::StringPiece to_piece(std::u8string_view u8sv) {
+  return re2::StringPiece(reinterpret_cast<const char *>(u8sv.data()),
+                          u8sv.size());
 }
 
 auto sft_jsonl(std::filesystem::path filename) -> void {
@@ -54,6 +60,10 @@ auto sft_jsonl(std::filesystem::path filename) -> void {
 
   for (const auto &[author, content] : buddha::get_messages(db_path)) {
     if (!first_message && author != prev_author) {
+      auto proxy = reinterpret_cast<std::string *>(&current_content);
+      re2::RE2::GlobalReplace(proxy, regex::emoji_regex, "\\1");
+      re2::RE2::GlobalReplace(proxy, regex::mention_regex, "@user");
+
       if (is_user_role) {
         writer.StartObject();
         writer.Key("messages");
@@ -135,22 +145,28 @@ auto bpe(std::filesystem::path filename) -> void {
   buddha::bpe::export_table(filename, t);
 }
 
-const auto emoji_regex = re2::RE2(R"((<a?:.+?:\d{19}>))");
 auto emojis(std::filesystem::path filename) -> void {
   assert(emoji_regex.ok());
 
-  auto unique_emojis = std::unordered_set<std::string>{};
+  auto unique_emojis = std::unordered_map<std::string, int>{};
 
   std::string match;
   for (const auto &[_, content] : buddha::get_messages(db_path, false, false)) {
     re2::StringPiece input(reinterpret_cast<const char *>(content.c_str()),
                            static_cast<int>(content.size()));
-    while (re2::RE2::FindAndConsume(&input, emoji_regex, &match))
-      unique_emojis.emplace(match);
+    while (re2::RE2::FindAndConsume(&input, regex::emoji_regex, &match))
+      unique_emojis[match]++;
   }
 
+  // clang-format off
+  const auto top_emojis = buddha::utils::flip_map(unique_emojis)
+    | std::views::reverse
+    | std::views::take(15)
+    | std::views::transform([](const auto &pair) { return pair.second; });
+  // clang-format on
+
   auto f = std::ofstream{filename};
-  f << std::format("{:n}", unique_emojis);
+  f << std::format("{:n}", top_emojis);
   f.close();
 }
 
