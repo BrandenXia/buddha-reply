@@ -11,7 +11,7 @@ namespace buddha {
 using time_point = std::chrono::system_clock::time_point;
 
 auto get_messages(std::filesystem::path db_path)
-    -> cppcoro::generator<std::pair<time_point, std::u8string>>;
+    -> cppcoro::generator<std::pair<std::string, std::u8string>>;
 
 } // namespace buddha
 

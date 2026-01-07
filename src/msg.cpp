@@ -75,15 +75,16 @@ auto parse_time(std::string_view time_str) {
 }
 
 auto get_messages(std::filesystem::path db_path)
-    -> cppcoro::generator<std::pair<time_point, std::u8string>> {
+    -> cppcoro::generator<std::pair<std::string, std::u8string>> {
   auto db = SQLite::Database{db_path};
 
-  auto query = SQLite::Statement{db, "SELECT createdAt,content FROM "
-                                     "messages WHERE length(content) <= ?"};
+  auto query =
+      SQLite::Statement{db, "SELECT authorId,content FROM "
+                            "messages WHERE length(content) <= ? ORDER BY id"};
   query.bind(1, MAX_CHAR_LEN);
 
   while (query.executeStep()) {
-    const char *createdAt = query.getColumn(0);
+    const char *authorId = query.getColumn(0);
     const char *content = query.getColumn(1);
 
     if (is_spam(content))
@@ -92,7 +93,7 @@ auto get_messages(std::filesystem::path db_path)
     auto sv = std::string_view{content};
 
     co_yield {
-        parse_time(createdAt),
+        std::string{authorId},
         std::u8string{reinterpret_cast<const char8_t *>(sv.data()), sv.size()}};
   }
 }
