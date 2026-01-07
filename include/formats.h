@@ -13,6 +13,8 @@ auto dpo_jsonl(std::filesystem::path filename) -> void;
 
 auto bpe(std::filesystem::path filename) -> void;
 
+auto emojis(std::filesystem::path filename) -> void;
+
 } // namespace buddha::exports
 
 #endif

@@ -1,17 +1,22 @@
 #include "formats.h"
 
+#include <cassert>
 #include <cstdio>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <print>
 #include <ranges>
 #include <string_view>
+#include <unordered_set>
 
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
+#include "re2/re2.h"
 
 #include "bpe.h"
 #include "msg.h"
+#include "re2/stringpiece.h"
 
 constexpr auto db_path = "data/msg.sqlite";
 
@@ -128,6 +133,25 @@ auto bpe(std::filesystem::path filename) -> void {
   auto t = buddha::bpe::build(msgs);
   buddha::bpe::print_table(t);
   buddha::bpe::export_table(filename, t);
+}
+
+const auto emoji_regex = re2::RE2(R"((<a?:.+?:\d{19}>))");
+auto emojis(std::filesystem::path filename) -> void {
+  assert(emoji_regex.ok());
+
+  auto unique_emojis = std::unordered_set<std::string>{};
+
+  std::string match;
+  for (const auto &[_, content] : buddha::get_messages(db_path, false, false)) {
+    re2::StringPiece input(reinterpret_cast<const char *>(content.c_str()),
+                           static_cast<int>(content.size()));
+    while (re2::RE2::FindAndConsume(&input, emoji_regex, &match))
+      unique_emojis.emplace(match);
+  }
+
+  auto f = std::ofstream{filename};
+  f << std::format("{:n}", unique_emojis);
+  f.close();
 }
 
 } // namespace buddha::exports

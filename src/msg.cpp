@@ -71,20 +71,21 @@ auto parse_time(std::string_view time_str) {
   return std::chrono::system_clock::from_time_t(timet);
 }
 
-auto get_messages(std::filesystem::path db_path)
+auto get_messages(std::filesystem::path db_path, bool skip_spam, bool ordered)
     -> cppcoro::generator<std::pair<std::string, std::u8string>> {
   auto db = SQLite::Database{db_path};
 
-  auto query =
-      SQLite::Statement{db, "SELECT authorId,content FROM "
-                            "messages WHERE length(content) <= ? ORDER BY id"};
-  query.bind(1, MAX_CHAR_LEN);
+  auto stmt = std::format("{}{}{}", "SELECT authorId,content FROM messages",
+                          skip_spam ? " WHERE length(content) <= ?" : "",
+                          ordered ? " ORDER BY id" : "");
+  auto query = SQLite::Statement{db, stmt};
+  if (skip_spam) query.bind(1, MAX_CHAR_LEN);
 
   while (query.executeStep()) {
     const char *authorId = query.getColumn(0);
     const char *content = query.getColumn(1);
 
-    if (is_spam(content)) continue;
+    if (skip_spam && is_spam(content)) continue;
 
     auto sv = std::string_view{content};
 

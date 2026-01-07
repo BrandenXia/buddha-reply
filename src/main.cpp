@@ -4,6 +4,7 @@
 
 #include "bpe.h"
 #include "formats.h"
+#include "msg.h"
 
 using namespace buddha;
 
@@ -29,6 +30,8 @@ auto main(int argc, char *argv[]) -> int {
       exports::sft_jsonl("data/sft.jsonl");
     else if (type == "bpe")
       exports::bpe("data/msg.bpe");
+    else if (type == "emojis")
+      exports::emojis("data/emojis.txt");
     else
       std::println("Unknown export type: \"{}\"\nAvailable types: {:n}", type,
                    export_types);

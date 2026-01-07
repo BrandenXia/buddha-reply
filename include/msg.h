@@ -18,7 +18,8 @@ inline constexpr auto shannon_entropy(std::string_view content) -> double;
 
 auto is_spam(std::string_view content) -> bool;
 
-auto get_messages(std::filesystem::path db_path)
+auto get_messages(std::filesystem::path db_path, bool skip_spam = true,
+                  bool ordered = true)
     -> cppcoro::generator<std::pair<std::string, std::u8string>>;
 
 } // namespace buddha
