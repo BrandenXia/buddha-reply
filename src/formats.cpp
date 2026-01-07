@@ -13,13 +13,15 @@
 #include "bpe.h"
 #include "msg.h"
 
-#define DB_PATH "data/msg.sqlite"
+constexpr auto db_path = "data/msg.sqlite";
 
-auto text(std::filesystem::path filename) {
+namespace buddha::exports {
+
+auto text(std::filesystem::path filename) -> void {
   auto f = std::ofstream(filename);
 
   auto cnt = 0;
-  for (const auto &[time, content] : buddha::get_messages(DB_PATH)) {
+  for (const auto &[time, content] : buddha::get_messages(db_path)) {
     f << reinterpret_cast<const char *>(content.c_str()) << "\n\n";
     cnt++;
   }
@@ -28,7 +30,7 @@ auto text(std::filesystem::path filename) {
   std::println("Finished exporting {} messages to {}", cnt, filename.c_str());
 }
 
-auto stf_jsonl(std::filesystem::path filename) {
+auto sft_jsonl(std::filesystem::path filename) -> void {
   auto fp = std::fopen(filename.c_str(), "wb");
   if (!fp) {
     std::println(stderr, "Failed to open file: {}", filename.string());
@@ -45,7 +47,7 @@ auto stf_jsonl(std::filesystem::path filename) {
   auto is_user_role = true;
   auto first_message = true;
 
-  for (const auto &[author, content] : buddha::get_messages(DB_PATH)) {
+  for (const auto &[author, content] : buddha::get_messages(db_path)) {
     if (!first_message && author != prev_author) {
       if (is_user_role) {
         writer.StartObject();
@@ -116,9 +118,9 @@ auto stf_jsonl(std::filesystem::path filename) {
   std::fclose(fp);
 }
 
-auto bpe(std::filesystem::path filename) {
+auto bpe(std::filesystem::path filename) -> void {
   // clang-format off
-  const auto msgs = buddha::get_messages(DB_PATH)
+  const auto msgs = buddha::get_messages(db_path)
     | std::views::transform([](const auto &pair) { return pair.second; })
     | std::views::join
     | std::ranges::to<std::u8string>();
@@ -127,3 +129,5 @@ auto bpe(std::filesystem::path filename) {
   buddha::bpe::print_table(t);
   buddha::bpe::export_table(filename, t);
 }
+
+} // namespace buddha::exports

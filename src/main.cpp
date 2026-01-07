@@ -12,6 +12,8 @@ auto import_bpe() {
   bpe::print_table(t);
 }
 
+constexpr auto export_types = std::array{"text", "sft-jsonl", "bpe"};
+
 auto main(int argc, char *argv[]) -> int {
   if (argc < 2) {
     std::print("Usage: {} <mode>\n", argv[0]);
@@ -24,11 +26,12 @@ auto main(int argc, char *argv[]) -> int {
     if (type == "text")
       exports::text("data/msg.txt");
     else if (type == "sft-jsonl")
-      exports::sft_jsonl("data/msg.jsonl");
+      exports::sft_jsonl("data/sft.jsonl");
     else if (type == "bpe")
       exports::bpe("data/msg.bpe");
     else
-      std::println("Unknown export type: {}", type);
+      std::println("Unknown export type: \"{}\"\nAvailable types: {:n}", type,
+                   export_types);
   } else if (mode == "import")
     import_bpe();
   else
