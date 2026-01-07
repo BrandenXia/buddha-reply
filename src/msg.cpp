@@ -13,12 +13,20 @@ namespace buddha {
 #define MAX_CHAR_LEN 600
 #define MAX_NEWLINE 15
 #define MIN_UNIQUE_RATIO 0.4
+#define MIN_CHAR_LEN 5
 
 bool is_spam(std::string_view content) {
   using namespace std::literals::string_view_literals;
   auto newline_cnt = 0;
   auto word_cnt = 0;
   auto unique_words = std::unordered_set<std::string_view>{};
+
+  // clang-format off
+  if (content.size() < MIN_CHAR_LEN) return true;
+  if (content.starts_with("!rule")) return true;
+  if (content.starts_with("!fortune")) return true;
+  if (content.starts_with("&p")) return true;
+  // clang-format on
 
   auto start = 0;
   while (start < content.size()) {
