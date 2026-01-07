@@ -38,28 +38,20 @@ auto export_jsonl(std::filesystem::path filename) {
   auto os = rapidjson::FileWriteStream(fp, buffer.data(), buffer.size());
   auto writer = rapidjson::Writer<rapidjson::FileWriteStream>(os);
 
-  // Use u8string for the buffer to match the input content type
   auto current_content = std::u8string{};
-  // Assuming author acts as a unique identifier key, we keep track of it
-  auto prev_author =
-      std::string_view{}; // Or u8string_view if author is also u8
+  auto prev_author = std::string_view{};
 
-  // Logic state
   auto is_user_role = true;
   auto first_message = true;
 
   for (const auto &[author, content] : buddha::get_messages(DB_PATH)) {
-    // Check if author changed (skip check on very first message)
     if (!first_message && author != prev_author) {
-
-      // 1. Start JSON structure if we are beginning a "User" block
       if (is_user_role) {
         writer.StartObject();
         writer.Key("messages");
         writer.StartArray();
       }
 
-      // 2. Write the accumulated message
       writer.StartObject();
       writer.Key("role");
       if (is_user_role)
@@ -68,34 +60,25 @@ auto export_jsonl(std::filesystem::path filename) {
         writer.String("assistant", 9);
 
       writer.Key("content");
-      // CASTING: rapidjson expects const char*, but u8string gives const
-      // char8_t*
       writer.String(reinterpret_cast<const char *>(current_content.c_str()),
                     static_cast<rapidjson::SizeType>(current_content.size()));
       writer.EndObject();
 
-      // 3. Logic to close block or switch role
       if (!is_user_role) {
-        // We just finished an Assistant block, so close the whole JSON line
         writer.EndArray();
         writer.EndObject();
         os.Put('\n');
 
-        // Next block starts fresh as User
         is_user_role = true;
-      } else {
-        // We just finished a User block, next is Assistant (within same JSON
-        // line)
+      } else
         is_user_role = false;
-      }
 
-      // Clear buffer for the new author
       current_content.clear();
     }
 
-    // Accumulate content
     if (!current_content.empty()) {
-      // Append newline using u8 literal to match u8string
+      if (current_content.ends_with(content)) continue;
+
       current_content += u8"\n";
     }
     current_content += content;
@@ -104,7 +87,6 @@ auto export_jsonl(std::filesystem::path filename) {
     first_message = false;
   }
 
-  // Flush the final buffer after the loop
   if (!current_content.empty()) {
     if (is_user_role) {
       writer.StartObject();
@@ -151,7 +133,7 @@ auto import_bpe() {
 }
 
 auto main(int argc, char *argv[]) -> int {
-  if (argc <= 2) {
+  if (argc < 2) {
     std::print("Usage: {} <mode>\n", argv[0]);
     return 1;
   }

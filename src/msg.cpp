@@ -31,8 +31,7 @@ bool is_spam(std::string_view content) {
   auto start = 0;
   while (start < content.size()) {
     auto end = content.find_first_of(" \n"sv, start);
-    if (end == std::string_view::npos)
-      end = content.size();
+    if (end == std::string_view::npos) end = content.size();
 
     auto word = content.substr(start, end - start);
     if (!word.empty()) {
@@ -43,14 +42,12 @@ bool is_spam(std::string_view content) {
         unique_words.insert(word);
     }
 
-    if (newline_cnt > MAX_NEWLINE)
-      return true;
+    if (newline_cnt > MAX_NEWLINE) return true;
 
     start = end + 1;
   }
 
-  if (word_cnt == 0)
-    return true;
+  if (word_cnt == 0) return true;
   if (static_cast<double>(unique_words.size()) / word_cnt < MIN_UNIQUE_RATIO)
     return true;
 
@@ -87,8 +84,7 @@ auto get_messages(std::filesystem::path db_path)
     const char *authorId = query.getColumn(0);
     const char *content = query.getColumn(1);
 
-    if (is_spam(content))
-      continue;
+    if (is_spam(content)) continue;
 
     auto sv = std::string_view{content};
 
