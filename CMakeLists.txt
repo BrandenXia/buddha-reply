@@ -8,8 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(include)
-add_executable(buddha-reply src/main.cpp src/msg.cpp src/bpe.cpp)
+add_executable(buddha-reply src/main.cpp src/msg.cpp src/bpe.cpp src/formats.cpp)
 
+# cppcoro
+include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/cppcoro/include)
+# rapidjson
+include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/rapidjson/include)
+# sqlitecpp
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/SQLiteCpp)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/SQLiteCpp/include)
 target_link_libraries(buddha-reply
@@ -18,7 +23,7 @@ target_link_libraries(buddha-reply
   pthread
   dl
 )
-
-include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/cppcoro/include)
-
-include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/rapidjson/include)
+# re2
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/re2)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/re2)
+target_link_libraries(buddha-reply re2)

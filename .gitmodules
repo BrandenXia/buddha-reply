@@ -7,3 +7,6 @@
 [submodule "thirdparty/rapidjson"]
 	path = thirdparty/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "thirdparty/re2"]
+	path = thirdparty/re2
+	url = https://github.com/google/re2
