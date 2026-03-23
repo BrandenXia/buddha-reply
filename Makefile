@@ -19,7 +19,7 @@ buddha-reply: build
 analysis:
 	./scripts/analysis.py
 
-run: ./build/buddha-reply
+run: buddha-reply
 	./build/buddha-reply
 
 clean:
